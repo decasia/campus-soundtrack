@@ -6,7 +6,6 @@ var width;
 var height;
 var volume = 0.6;
 var ULTIMATE_DREAM_KILLER = false;  // https://github.com/debugger22/github-audio/pull/19
-var orgRepoFilterNames = [];
 
 var scale_factor = 6,
     note_overlap = 2,
@@ -36,17 +35,8 @@ var socket = io();
 socket.on('github', function (data) {
   $('.online-users-count').html(data.connected_users);
   data.data.forEach(function(event){
-    if(!isEventInQueue(event)){
-      // Filter out events only specified by the user
-      if(orgRepoFilterNames != []){
-        // Don't consider pushes to github.io repos when org filter is on
-        if(new RegExp(orgRepoFilterNames.join("|")).test(event.repo_name)
-           && event.repo_name.indexOf('github.io') == -1){
-          eventQueue.push(event);
-        }
-      }else{
-        eventQueue.push(event);
-      }
+    if (!isEventInQueue(event)) {
+      eventQueue.push(event);
     }
   });
   // Don't let the eventQueue grow more than 1000
@@ -194,11 +184,6 @@ $(function(){
 
   // Make header and footer visible
   $('body').css('visibility', 'visible');
-
-  $('#org-repo-filter-name').on('input', function() {
-    orgRepoFilterNames = $('#org-repo-filter-name').val().split(' ');
-    eventQueue = [];
-  });
 
 });
 

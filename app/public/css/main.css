@@ -156,23 +156,6 @@ circle {
     font-weight: 300;
 }
 
-#org-repo-filter-div{
-    width: 50%;
-    margin: 0 auto;
-    margin-bottom: 0px;
-}
-
-#org-repo-filter-name{
-    width: 20%;
-    color: gray;
-    padding: 5px;
-    padding-left: 10px;
-    border: none;
-    background: #F1F1F1;
-    font-family: 'Josefin Sans', sans-serif;
-    font-size: 1em;
-}
-
 .site-description{
     font-size: 1em;
     line-height: 1.6em;

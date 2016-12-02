@@ -2,7 +2,6 @@
 
 var express = require('express');
 var app = express();
-var request = require("request");  // To make HTTP requests at the server side
 
 var server = require('http').Server(app);
 var io = require('socket.io')(server);
@@ -49,6 +48,8 @@ app.get('/', function (req, res) {
 
 var allClients = [];
 
+redis_client.set('connected_users', 0);
+
 // When a socket connection is created
 io.on('connection', function (socket) {
   allClients.push(socket);
@@ -66,73 +67,20 @@ io.on('connection', function (socket) {
 });
 
 
-// initialize data fetch timer
-setTimeout(sources.fetchDataSources, 2000);
-
-function stripData(data){
-  var stripedData = [];
-  var pushEventCounter = 0;
-  var IssueCommentEventCounter = 0;
-  var IssuesEventCounter = 0;
-  data.forEach(function(data){
-    if(data.type == 'PushEvent'){
-      if(pushEventCounter > 3) return;
-      if(data.payload.size != 0){
-        stripedData.push({
-          'id': data.id,
-          'type': data.type,
-          'user': data.actor.display_login,
-          'user_avatar': data.actor.avatar_url + 'v=3&s=64',
-          'repo_id': data.repo.id,
-          'repo_name': data.repo.name,
-          'payload_size': data.payload.size,
-          'message': data.payload.commits[0].message,
-          'created': data.created_at,
-          'url': data.repo.url
+function fetchDataSources() {
+  allClients.forEach(function(socket){
+    if(socket != null && socket.connected == true){
+        redis_client.get('connected_users', function(err, count) {
+            if (!err && count != null) {
+              socket.volatile.json.emit('campus', {data: sources.sampleData(), connected_users: count});
+            } else {
+              logger.error(err.message);
+            }
         });
-        pushEventCounter++;
-      }
-    }else if(data.type == 'IssueCommentEvent'){
-      stripedData.push({
-        'id': data.id,
-        'type': data.type,
-        'user': data.actor.display_login,
-        'user_avatar': data.actor.avatar_url + 'v=3&s=64',
-        'repo_id': data.repo.id,
-        'repo_name': data.repo.name,
-        'payload_size': 0,
-        'message': data.body,
-        'created': data.created_at,
-        'url': data.payload.comment.html_url
-      });
-    }else if(data.type == 'PullRequestEvent'){
-      if (data.payload.pull_request.merged) data.payload.action = 'merged';
-      stripedData.push({
-        'id': data.id,
-        'type': data.type,
-        'user': data.actor.display_login,
-        'user_avatar': data.actor.avatar_url + 'v=3&s=64',
-        'repo_id': data.repo.id,
-        'repo_name': data.repo.name,
-        'action': data.payload.action,  // opened, reopened, closed, merged
-        'message': data.payload.pull_request.title,
-        'created': data.created_at,
-        'url': data.payload.pull_request.html_url
-      });
-    }else if(data.type == 'IssuesEvent'){
-      stripedData.push({
-        'id': data.id,
-        'type': data.type,
-        'user': data.actor.display_login,
-        'user_avatar': data.actor.avatar_url + 'v=3&s=64',
-        'repo_id': data.repo.id,
-        'repo_name': data.repo.name,
-        'action': data.payload.action,  // opened, reopened, closed
-        'message': data.payload.issue.title,
-        'created': data.created_at,
-        'url': data.payload.issue.html_url
-      });
     }
   });
-  return stripedData;
+  setTimeout(fetchDataSources, 2000);
 }
+
+// initialize data fetch timer
+setTimeout(fetchDataSources, 2000);

@@ -32,7 +32,7 @@ var svg_background_color_online = '#0288D1',
 
 
 var socket = io();
-socket.on('github', function (data) {
+socket.on('campus', function (data) {
   $('.online-users-count').html(data.connected_users);
   data.data.forEach(function(event){
     if (!isEventInQueue(event)) {
@@ -211,9 +211,9 @@ function playSound(size, type) {
     index = Math.max(1, index);
     if (current_notes < note_overlap) {
         current_notes++;
-        if (type == 'IssuesEvent' || type == 'IssueCommentEvent') {
+        if (type == 'lms-signon') {
             clav[index].play();
-        } else if(type == 'PushEvent') {
+        } else if(type == 'lms-course-update') {
             celesta[index].play();
         }else{
           playRandomSwell();
@@ -273,25 +273,35 @@ function drawEvent(data, svg_area) {
     var ring_anim_duration = 3000;
     svg_text_color = '#FFFFFF';
     switch(data.type){
-      case "PushEvent":
-        label_text = data.user.capitalize() + " pushed to " + data.repo_name;
+      case "lms-signon":
+        label_text = 'A user signed on to Moodle';
         edit_color = '#B2DFDB';
       break;
-      case "PullRequestEvent":
-        label_text = data.user.capitalize() + " " +
-          data.action + " " + " a PR for " + data.repo_name;
+      case "lms-submission":
+        label_text = 'A user submitted an assignment for ' + data.description;
           edit_color = '#C6FF00';
           ring_anim_duration = 10000;
           ring_radius = 600;
       break;
-      case "IssuesEvent":
-        label_text = data.user.capitalize() + " " +
-          data.action + " an issue in " + data.repo_name;
+      case "lms-course-update":
+        label_text = data.description + ' was updated on Moodle';
           edit_color = '#FFEB3B';
       break;
-      case "IssueCommentEvent":
-        label_text = data.user.capitalize() + " commented in " + data.repo_name;
+      case "library-entry":
+        label_text = 'Someone entered the library.';
         edit_color = '#FF5722';
+      break;
+      case "network-overload":
+        label_text = 'Campus network overloading!';
+        edit_color = '#FF5722';
+      break;
+      case "email-sent":
+        label_text = 'Someone sent an email.';
+        edit_color = '#05D102';
+      break;
+      case "event-started":
+        label_text = 'An event is starting on campus!';
+        edit_color = '#CED102';
       break;
     }
     var csize = size;
@@ -302,7 +312,7 @@ function drawEvent(data, svg_area) {
     var abs_size = Math.abs(size);
     size = Math.max(Math.sqrt(abs_size) * scale_factor, 3);
 
-    Math.seedrandom(data.message)
+    Math.seedrandom(data.message + new Date())
     var x = Math.random() * (width - size) + size;
     var y = Math.random() * (height - size) + size;
 
